@@ -15,7 +15,7 @@ df_urls = pd.read_excel('pdf_urls/urls_2022FD.xlsx')
 df_urls = df_urls[df_urls['DocID'] > 10000000]
 
 #drop the first row
-df_urls = df_urls.drop(df_urls.index[0]) #for testing. This pdf is more complicated than the others
+df_urls = df_urls.drop(df_urls.index[0]) #for testing. This 2nd pdf is more complicated than the others
 
 # loop through urls and append loaders as list
 loaders = []
@@ -32,7 +32,7 @@ for index, row in df_urls.iterrows():
 index = VectorstoreIndexCreator().from_loaders(loaders)
 
 # query index
-query = "List all assets and the min and max value for each asset."
+query = "Look through each page of the pdf and list all assets in the table schedule A and the min and max value for each asset."
 result = index.query(query)
 
 # remove whitespace from result at beginning and end and period
