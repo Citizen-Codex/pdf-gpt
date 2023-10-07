@@ -1,36 +1,38 @@
 import os
 from langchain.document_loaders import PyPDFLoader
 from langchain.indexes import VectorstoreIndexCreator
-import json
 import pandas as pd
-import re
 
 from dotenv import load_dotenv
 load_dotenv()
 
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
-# load url from excel file
+# load urls from excel file
 df_urls = pd.read_excel('pdf_urls/urls_2022FD.xlsx')
 
 #filter for only urls greater than 10000000
 df_urls = df_urls[df_urls['DocID'] > 10000000]
 
+#drop the first row
+df_urls = df_urls.drop(df_urls.index[0]) #for testing. This pdf is more complicated than the others
+
 # loop through urls and append loaders as list
+loaders = []
 for index, row in df_urls.iterrows():
     url = row['URL']
+    print(row['Last'])
     loader = PyPDFLoader(url)
-    if index == 0:
-        loaders = [loader]
-    else:
-        loaders.append(loader)
-    #break after two pdfs, this is for testing purposes
+    loaders.append(loader)
+    #break after X pdfs, this is for testing purposes
     if index == 1:
         break
 
-index = VectorstoreIndexCreator().from_loaders([loaders])
+# create index from loaders
+index = VectorstoreIndexCreator().from_loaders(loaders)
 
-query = "List all assets in the table under header Schedule A along with the min and max value for each asset"
+# query index
+query = "List all assets and the min and max value for each asset."
 result = index.query(query)
 
 # remove whitespace from result at beginning and end and period
@@ -62,12 +64,3 @@ df = pd.DataFrame({'Asset': assets, 'Min Amount': min_amounts, 'Max Amount': max
 
 # Display the DataFrame
 print(df)
-
-#load multiple pdfs to index
-loader_1 = PyPDFLoader("https://disclosures-clerk.house.gov/public_disc/financial-pdfs/2019/10035197.pdf")
-loader_2 = PyPDFLoader("https://disclosures-clerk.house.gov/public_disc/financial-pdfs/2022/10053116.pdf")
-
-index = VectorstoreIndexCreator().from_loaders([loader_1, loader_2])
-
-query = "For each pdf, list the name, all assets under header Schedule A, and each asset's min and max value. Output each pdf as a different setence."
-result = index.query(query)
