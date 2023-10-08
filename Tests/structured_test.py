@@ -7,6 +7,8 @@ from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 
 from dotenv import load_dotenv
+from typing import List
+
 load_dotenv()
 
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
@@ -14,9 +16,8 @@ os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 # Define a new Pydantic model with field descriptions and tailored for Twitter.
 class assets(BaseModel):
     name: str = Field(description="Name on pdf.")
-    assets: str = Field(description="list of assets.")
-    min_amount: str = Field(description="min amount for each asset.")
-    max_amount: str = Field(description="max amount for each asset.")
+    Asset: List[str] = Field(description="List of items in column asset.")
+    Value_of_Asset: List[str] = Field(description="List of values in column value of asset.")
 
 
 parser = PydanticOutputParser(pydantic_object=assets)
@@ -50,3 +51,18 @@ _input = prompt.format_prompt(question=document_query)
 output = chat_model(_input.to_messages())
 parsed = parser.parse(output.content)
 
+print(parsed)
+
+data = parsed
+
+import pandas as pd
+# make parsed into a dataframe where name repeats for each asset
+data_list = [{
+    'name': data.name,
+    'Asset': asset,
+    'Value_of_Asset': value
+} for asset, value in zip(data.Asset, data.Value_of_Asset)]
+
+# Create a pandas DataFrame from the list of dictionaries
+df = pd.DataFrame(data_list)
+print(df)

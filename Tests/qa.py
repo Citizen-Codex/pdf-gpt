@@ -31,9 +31,14 @@ for index, row in df_urls.iterrows():
 # create index from loaders
 index = VectorstoreIndexCreator().from_loaders(loaders)
 
-# query index
-query = "Look through each page of the pdf and list all assets in the table schedule A and the min and max value for each asset."
+# query index 
+# this generates a limited descripion
+query = "List first 3 assets based on Schedule A in this pdf"
 result = index.query(query)
+
+
+
+# should be able to remove below 
 
 # remove whitespace from result at beginning and end and period
 result_slim = result.strip().replace(".", "")
