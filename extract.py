@@ -12,6 +12,7 @@ os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = "gpt-4" #gpt-3.5-turbo works for small pdfs but not larger ones
 # consider changing models based on pdf size
+# could also cut costs by trimming pdfs to only the relevant sections (might lose on labor costs)
 OPENAI_TOKEN_LIMIT = 12000 # we will exceed this limit if we try to run on 300+ pdfs? 
 
 doctran = Doctran(openai_api_key=OPENAI_API_KEY, openai_model=OPENAI_MODEL, openai_token_limit=OPENAI_TOKEN_LIMIT)
