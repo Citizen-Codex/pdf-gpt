@@ -23,7 +23,10 @@ for index, row in df_urls.iterrows():
 pdf_content = ''.join(pdf_content)
 
 # content number of tokens
-tokens = len(pdf_content.split())
+words = len(pdf_content.split())
+
+# 1,000 tokens is about 750 words, adjust
+tokens = words/750*1000
 
 # GPT 4 pricing
 tokens/1000*.03
