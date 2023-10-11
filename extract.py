@@ -6,34 +6,38 @@ import time
 from dotenv import load_dotenv
 from doctran import Doctran, ExtractProperty
 from langchain.document_loaders import PyPDFLoader
+import tiktoken
 
 load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL = "gpt-4" #gpt-3.5-turbo works for small pdfs but not larger ones
-# consider changing models based on pdf size
-# could also cut costs by trimming pdfs to only the relevant sections (might lose on labor costs)
-OPENAI_TOKEN_LIMIT = 12000 # we will exceed this limit if we try to run on 300+ pdfs? 
+OPENAI_TOKEN_LIMIT = 50000 
 
-doctran = Doctran(openai_api_key=OPENAI_API_KEY, openai_model=OPENAI_MODEL, openai_token_limit=OPENAI_TOKEN_LIMIT)
+# get encoding for model 
+encoding = tiktoken.encoding_for_model("gpt-4")
 
-# load urls from excel file
+# filter urls for only those that have not been extracted
+# load output/*.json files into dataframe
+all_results = []
+for filename in os.listdir('output/'):
+    with open(f'output/{filename}') as f:
+        data = json.load(f)
+        all_results.append(data)
+
+# pull urls from results object 
+urls = []
+for result in all_results:
+    urls.append(result['URL'])
+
+# filter df_urls for urls not in results
 df_urls = pd.read_excel('pdf_urls/urls_2022FD.xlsx')
-
-#filter for only urls greater than 10000000
-df_urls = df_urls[df_urls['DocID'] > 10000000]
+df_urls= df_urls[~df_urls['URL'].isin(urls)]
 
 # define properties to extract
 properties = [
         ExtractProperty(
             name="Name", 
             description="The name of the person",
-            type="string",
-            required=True
-        ),
-        ExtractProperty(
-            name="Filing ID", 
-            description="The filing ID without the #",
             type="string",
             required=True
         ),
@@ -50,7 +54,7 @@ properties = [
                     },
                     "Asset Type": {
                         "type": "string",
-                        "description": "The initials of the type of asset named between brackets"
+                        "description": "The two letters between brackets to the right of the asset name"
                     },
                     "Minimum value": {
                         "type": "integer",
@@ -73,7 +77,7 @@ properties = [
                 "properties": {
                     "Creditor": {
                         "type": "string",
-                        "description": "The name of the liability"
+                        "description": "The name of the creditor. Exclude the owner information"
                     },
                     "Minimum value": {
                         "type": "integer",
@@ -91,50 +95,59 @@ properties = [
 
 #loop each url and extract properties
 results = []
-for index, row in df_urls.iterrows():
+missed_urls = []
+for index, row in df_urls.iterrows(): 
     url = row['URL']
-    print(row['Last'])
+    docid = row['DocID']
+    last_name = row['Last']
+    print(f'{index}: {last_name}')
 
-    # extract text from each page of pdf and save as one string
-    # this is necessary because doctran only takes one string as input
-    # you could also use pypdf2 to extract text from pdf directly
+    # extract text from each page of pdf and save as one string 
     loader = PyPDFLoader(url)
     pdf_document = loader.load()
     pdf_content = []
     for page in pdf_document:
-        pdf_content.append(page.page_content)
+        pdf_content.append(page.page_content) #consider removing non-word characters
     pdf_content = ''.join(pdf_content)
+
+    # content number of tokens
+    tokens = len(encoding.encode(pdf_content))
+
+    #print number of tokens
+    print(f'Number of tokens: {tokens}')
+
+    if tokens < 7500:
+        doctran = Doctran(openai_api_key=OPENAI_API_KEY, openai_model="gpt-4", openai_token_limit=OPENAI_TOKEN_LIMIT)
+    else: 
+        doctran = Doctran(openai_api_key=OPENAI_API_KEY, openai_model="gpt-3.5-turbo-16k", openai_token_limit=OPENAI_TOKEN_LIMIT)
 
     # parse pdf content into doctran document
     document = doctran.parse(content=pdf_content)
 
-    # extract properties from document
+    # extract properties from document (could move out of loop)
     async def extract_content():
         transformed_document = await document.extract(properties=properties).execute()
         extracted_text = json.dumps(transformed_document.extracted_properties, indent=2)
         return(extracted_text)
     
-    extracted_props = asyncio.run(extract_content())
+    try:
+        # run async function and confirm that it ran successfully
+        extracted_props = asyncio.run(extract_content())
+        extracted_props = json.loads(extracted_props)
+        # add url to json object
+        extracted_props['URL'] = url
+        # save results to list
+        results.append(extracted_props)
+        # write results with json to individual files
+        with open(f'output/{docid}.json', 'w') as f:
+            json.dump(extracted_props, f, indent=2)
 
-    # converrt  json
-    extracted_props = json.loads(extracted_props)
+    except Exception as e:
+        print(f'Error extracting properties at index {index} and docid {docid} corresponding to {url}: {e}')
 
-    # save results to list
-    results.append(extracted_props)
-    time.sleep(5) #wait between each pdf
+        
+    time.sleep(30) #wait between each pdf
 
-    #break after X pdfs, this is for testing purposes
-    if index == 3:
+    # break after 100 urls (avoid bad gateway error)
+    if index == 50:
         break
-
-# save results to json file
-with open('output/results.json', 'w') as f:
-    json.dump(results, f, indent=2)
-
-# transform json data objects into dataframe
-assets_df = pd.json_normalize(results, record_path=['Assets'], meta=['Name','Filing ID'])
-liabilities_df = pd.json_normalize(results, record_path=['Liabilites'], meta=['Name', 'Filing ID'])
-
-# save to excel
-assets_df.to_excel('output/assets.xlsx')
-liabilities_df.to_excel('output/liabilities.xlsx')

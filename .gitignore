@@ -5,6 +5,10 @@
 # json 
 *.json
 
+# pdf_dir
+pdf_dir/
+image_pdfs
+
 # txt 
 *.txt
 
