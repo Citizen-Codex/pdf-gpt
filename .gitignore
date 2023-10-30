@@ -5,6 +5,9 @@
 # json 
 *.json
 
+# csv 
+*.csv
+
 # pdf_dir
 pdf_dir/
 image_pdfs
