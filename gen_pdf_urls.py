@@ -26,3 +26,4 @@ subset_df['URL'] = 'https://disclosures-clerk.house.gov/public_disc/financial-pd
 
 #not sure why there are 5 extra documents. May be for house members who died or resigned?
 subset_df.to_excel('pdf_urls/urls_2022FD.xlsx', index=False)
+

@@ -1,5 +1,6 @@
 # excel files
 *.xlsx
+!min_to_max_values.xlsx
 *.xls
 
 # json 

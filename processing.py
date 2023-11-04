@@ -1,30 +1,41 @@
 import pandas as pd
-import os
+import utils
 from utils import output_dir
+from importlib import reload
+reload(utils)
 
 # read url file
 df_urls = pd.read_excel('pdf_urls/urls_2022FD.xlsx')
 
 # read and combine csv files from output2/csv_files
-files = os.listdir(f'{output_dir}/csv_files')
-
-csv_data = []
-
-for f in files: 
-    df = pd.read_csv(f'{output_dir}/csv_files/{f}')
-    #drop index column
-    df = df.drop(columns=['Unnamed: 0'])
-    csv_data.append(df)
-
-agg = pd.concat(csv_data, ignore_index=True)
+df_as = utils.read_assets()
+df_l = utils.read_liabs()
 
 #if [ and ] in asset type, take the letters between them and strip everything else
-agg['Asset Type'] = agg['Asset Type'].str.extract(r'\[(.*?)\]')
+df_as['asset_type'] = df_as['acronyms'].str.extract(r'\[(\w{2})\]')
+
+#read min_to_max 
+mtm_a = pd.read_excel('min_to_max_values.xlsx', sheet_name='Assets')
+mtm_l = pd.read_excel('min_to_max_values.xlsx', sheet_name='Liabilities')
+
+okay_asset_values = mtm_a['Min']
+okay_liab_values = mtm_l['Min']
+
+#ensures noise is removed 
+df_as = df_as[df_as['asset_value'].isin(okay_asset_values)]
+df_l = df_l[df_l['Liability_value'].isin(okay_liab_values)]
 
 #combine agg and url file   
-agg_url = pd.merge(df_urls, agg, on='URL')
+agg_url = pd.merge(df_urls, df_as, on='URL')
 
 #write agg_url to excel 
 agg_url.to_excel(f'{output_dir}/agg_url.xlsx', index=False)
 
-#create main dataset with all assets and liabilities?
+#filter df_l for liability_value containing "Country Bank October"
+#convert Liability_value to string 
+df_l['Liability_value'] = df_l['Liability_value'].astype(str)
+
+df_l[df_l['Liability_value'].str.contains('Old National Bank')]
+
+#filter df_l for docid == 10053013
+df_l[df_l['docid'] == 10054244]
