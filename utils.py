@@ -39,6 +39,7 @@ class Assets(BaseModel):
 #define pydantic model
 class LiabilityItem(BaseModel):
     liability_name: str = Field(description="The name of the liability. Ignore comments beginning with 'D:', 'C:' or 'L:'.")
+    liability_type: str = Field(description="The type of the liability")
     Liability_value: int = Field(description="The dollar value of the liability. Don't include the dollar sign. Do not make up values or assign a single value to multiple liabilities. Do not round or change values! If value ends in 1, keep 1")
 
 #make it into a list
@@ -184,4 +185,34 @@ def read_liabs():
             df_list.append(df_temp)
     df_comp = pd.concat(df_list, ignore_index=True)
     df_comp['docid_page_number'] = df_comp['docid'].astype(str) + '_' + df_comp['page_number'].astype(str)
+    #change val col to type int
     return(df_comp)
+
+
+#call function to output real-estate net worth and asset networth
+def non_rp_assets(assets):
+    #split df with asset_type != RP
+    not_rp = assets[assets['asset_type'] != 'RP']
+    return not_rp
+
+def non_rp_liabs(liabilities):
+    search_string = 'mortgage|home|residence|property|rental|real estate|real-estate'
+    liabilities['name_type'] = liabilities['name'] + liabilities['liability_type']
+    liabilities['rp'] = liabilities['name_type'].str.contains(search_string, case=False)
+    #split df with rp = False
+    not_rp = liabilities[liabilities['rp'] == False]
+    return not_rp
+
+def net_worth_cal(assets, liabilities):
+    assets = assets[['Min', 'Max', 'docid']]
+    liabilities = liabilities[['Min', 'Max', 'docid']]
+    #make cols negative
+    liabilities.loc[:, 'Min'] = liabilities['Min'] * -1
+    liabilities.loc[:, 'Max'] = liabilities['Max'] * -1
+    #concat assets and liabilities
+    net = pd.concat([assets, liabilities])
+    #group by docid
+    net = net.groupby('docid').sum()
+    #take average 
+    net['avg_value'] = (net['Min'] + net['Max']) / 2
+    return(net)

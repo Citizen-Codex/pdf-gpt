@@ -13,3 +13,8 @@ Things to improve:
 * The AI struggles to interpret both the word "None" and the number 0. It likes to look for the next number. 
 * We should be using some type of database to write and manipulate data. It should be backed up and in the cloud. Ideally it would have data version control 
 
+Notes of inconsistency 
+* The names of assets on page break may be truncated, e.g. simply saying SP 
+* Asset types may not be able to be pulled for truncated asset names (only 200-300 of 15,000 assets)
+* The AI sometimes will attach an income value to an asset with no value
+

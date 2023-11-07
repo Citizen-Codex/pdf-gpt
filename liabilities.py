@@ -19,10 +19,12 @@ df_pages = pd.read_csv(f'{output_dir}/liab_pages.csv')
 df_pages['docid_page_number'] = df_pages['docid'].astype(str) + '_' + df_pages['page_number'].astype(str)
 
 # create aggreage data set from output/csv_files
-df_comp = utils.read_liabs()
+# df_comp = utils.read_liabs()
 
-# filter out those already completed
-df = df_pages[~df_pages['docid_page_number'].isin(df_comp['docid_page_number'])]
+# # filter out those already completed
+# df = df_pages[~df_pages['docid_page_number'].isin(df_comp['docid_page_number'])]
+
+df = df_pages
 
 # Convert dataframe to a list of dictionaries for easier processing (could simply store this way in the future)
 rows = df.to_dict('records')
