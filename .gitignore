@@ -9,6 +9,9 @@
 # csv 
 *.csv
 
+# DS Store files
+*.DS_Store
+
 # pdf_dir
 pdf_dir/
 image_pdfs

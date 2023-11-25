@@ -211,8 +211,9 @@ def net_worth_cal(assets, liabilities):
     liabilities.loc[:, 'Max'] = liabilities['Max'] * -1
     #concat assets and liabilities
     net = pd.concat([assets, liabilities])
-    #group by docid
-    net = net.groupby('docid').sum()
+    #group by docid and sum. Include zero values
+    net = net.groupby('docid').sum().reset_index()
+    # net = net.groupby('docid').sum()
     #take average 
     net['avg_value'] = (net['Min'] + net['Max']) / 2
     return(net)
@@ -233,6 +234,7 @@ def get_political_info():
 
     for x in range(len(cur)):
         ind_terms = cur['terms'][x]
+        no_terms = len(ind_terms)
         for y in ind_terms:
             if y['start'] == '2023-01-03' and y['type'] == 'rep':
                 #create dict to store results
@@ -244,7 +246,8 @@ def get_political_info():
                     'party': y['party'],
                     'state': y['state'],
                     'district': y['district'],
-                    'type': y['type']
+                    'type': y['type'],
+                    'terms': no_terms
                     }
                 #concat dict results to df
                 legis = pd.concat([legis, pd.DataFrame([results])], ignore_index=True)

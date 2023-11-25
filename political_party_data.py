@@ -16,6 +16,7 @@ def get_political_info():
 
     for x in range(len(cur)):
         ind_terms = cur['terms'][x]
+        no_terms = len(ind_terms)
         for y in ind_terms:
             if y['start'] == '2023-01-03' and y['type'] == 'rep':
                 #create dict to store results
@@ -27,7 +28,8 @@ def get_political_info():
                     'party': y['party'],
                     'state': y['state'],
                     'district': y['district'],
-                    'type': y['type']
+                    'type': y['type'],
+                    'terms': no_terms,
                     }
                 #concat dict results to df
                 legis = pd.concat([legis, pd.DataFrame([results])], ignore_index=True)

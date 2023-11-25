@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 import utils
 from utils import output_dir
-from importlib import reload
-reload(utils)
 
 # read url file
 df_urls = pd.read_excel('pdf_urls/urls_2022FD.xlsx')
@@ -23,6 +21,15 @@ df_l = df_l.dropna(subset=['Liability_value'])
 
 #convert val col to type int
 df_l['Liability_value'] = df_l['Liability_value'].astype(int)
+
+#fill in values for Christopher H. Smith who somehow has a different scale (causing issues)
+df_as['asset_value'] = np.where((df_as['asset_name'] == "Synchrony Bank") & (df_as['docid'] == 10054556), 50001, df_as['asset_value'])
+df_as['asset_value'] = np.where((df_as['asset_name'] == "Vanguard Money Market (inherited IRA)") & (df_as['docid'] == 10054556), 15001, df_as['asset_value'])
+
+#fill in 0 for Min and Max values that are null when DocID greater than 10000000
+#this ensures congress members with 0 networth are counted 
+df_as['asset_value'] = np.where((df_as['asset_value'].isna()) & (df_as['docid'] > 10000000), 0, df_as['asset_value'])
+df_l['Liability_value'] = np.where((df_l['Liability_value'].isna()) & (df_l['docid'] > 10000000), 0, df_l['Liability_value'])
 
 #read min_to_max. Change col Min to type int 
 mtm_a = pd.read_excel('min_to_max_values.xlsx', sheet_name='Assets')
@@ -58,23 +65,34 @@ a = a[['Min', 'Max', 'name', 'docid','asset_type']]
 l = l[['Min', 'Max', 'name', 'liability_type', 'docid']]
 
 #concat a and am, l and lm
-a = pd.concat([a, am])
-l = pd.concat([l, lm])
+a_agg = pd.concat([a, am])
+l_agg = pd.concat([l, lm])
 
 #filter out real-estate items and calculate non-rp net worth
-non_rp_a = utils.non_rp_assets(a)
-non_rp_l = utils.non_rp_liabs(l)
+non_rp_a = utils.non_rp_assets(a_agg)
+non_rp_l = utils.non_rp_liabs(l_agg)
 net_worth = utils.net_worth_cal(non_rp_a, non_rp_l)
 
 #combine net and url file   
 agg = pd.merge(df_urls, net_worth, left_on='DocID', right_on='docid', how='left')
 
+#if DocID greater than 10000000 and Min is NA
+#then set Min, Max and avg_value to 0 to account for congress members with no assets or liabilities (so 0 net worth)
+agg.loc[(agg['DocID'] > 10000000) & (agg['Min'].isna()), ['Min', 'Max', 'avg_value']] = 0
+
 #write agg to excel. First row is col names
 agg.to_excel(f'{output_dir}/net_worth.xlsx', index=False, header=True)
 
+#label asset types 
+#where a_agg['asset_type'] is "P", label as '5P'
+a_agg['asset_type'] = np.where(a_agg['asset_type'] == 'P', '5P', a_agg['asset_type'])
+at = pd.read_excel('asset_types.xlsx')
+a_agg = a.merge(at, on='asset_type', how='left')
+a_agg['asset_name'] = a_agg['asset_name'].fillna('Other')
+
 #merge a and l datasets with df_url and write as separate files (for record-keeping)
-af = pd.merge(df_urls, a, left_on='DocID', right_on='docid', how='left')
-lf = pd.merge(df_urls, l, left_on='DocID', right_on='docid', how='left')
+af = pd.merge(df_urls, a_agg, left_on='DocID', right_on='docid', how='left')
+lf = pd.merge(df_urls, l_agg, left_on='DocID', right_on='docid', how='left')
 af.to_excel(f'{output_dir}/assets.xlsx', index=False, header=True)
 lf.to_excel(f'{output_dir}/liabilities.xlsx', index=False, header=True)
 
