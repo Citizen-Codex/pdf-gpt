@@ -7,9 +7,6 @@ import utils
 from utils import output_dir
 import datetime
 import json
-#reload utils
-from importlib import reload
-reload(utils)
 
 chat_model = utils.chat_model
 
