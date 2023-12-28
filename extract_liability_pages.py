@@ -1,8 +1,6 @@
 import pandas as pd
 import utils
 from utils import output_dir
-from importlib import reload
-reload(utils)
 
 #read pdf_urls
 df_urls = pd.read_excel('pdf_urls/urls_2022FD.xlsx')
