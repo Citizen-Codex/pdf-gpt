@@ -20,4 +20,4 @@ How to repo works:
 * The script gen_pdf_urls.py uses metadata about financial disclosure submissions to create urls pointing towards the PDfs containing the data. This script matches each disclosue form with political information about a given congress member (e.g. their party, age, etc.). 
 * The scripts beginning with extract_ comb through and extract the relevant pages from pdfs accessed via their urls.
 * The scripts assets.py and liabilities.py send the extracted text to ChatGPT to be returned as structured json data.
-* The script processing.py cleans the results of ChatGPT analyis and calculates the networth of congress members
+* The script processing.py cleans the results of ChatGPT analyis and calculates the networth of congress members. This script also combines the automatically processed data with the manually processed data. 
