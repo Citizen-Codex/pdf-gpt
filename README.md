@@ -16,6 +16,7 @@ Notes of inconsistency
 * The AI sometimes will attach an income value to an asset with no value
 
 How to repo works: 
+* Create a .env to store your API key
 * All scripts rely on functions from utils.py
 * The script gen_pdf_urls.py uses metadata about financial disclosure submissions to create urls pointing towards the PDfs containing the data. This script matches each disclosue form with political information about a given congress member (e.g. their party, age, etc.). 
 * The scripts beginning with extract_ comb through and extract the relevant pages from pdfs accessed via their urls.
