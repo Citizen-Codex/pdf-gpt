@@ -45,12 +45,12 @@ a = a.rename(columns={'asset_name': 'name'})
 l = l.rename(columns={'liability_name': 'name'})
 
 #read in manual data
-am = pd.read_excel('manual_data/assets_2022FD_manual.xlsx')
-lm = pd.read_excel('manual_data/liabilities_2022FD_manual.xlsx')
+am_og = pd.read_excel('manual_data/assets_2022FD_manual.xlsx')
+lm_og = pd.read_excel('manual_data/liabilities_2022FD_manual.xlsx')
 
 #join manual data with df_urls to get docids 
-am = df_urls.merge(am, left_on='URL', right_on='url', how='inner')
-lm = df_urls.merge(lm, left_on='URL', right_on='URL', how='inner')
+am = df_urls.merge(am_og, left_on='URL', right_on='url', how='inner')
+lm = df_urls.merge(lm_og, left_on='URL', right_on='URL', how='inner')
 
 #change DocID to docid
 am = am.rename(columns={'DocID': 'docid'})
@@ -80,6 +80,9 @@ agg = pd.merge(df_urls, net_worth, left_on='DocID', right_on='docid', how='left'
 #then set Min, Max and avg_value to 0 to account for congress members with no assets or liabilities (so 0 net worth)
 agg.loc[(agg['DocID'] > 10000000) & (agg['Min'].isna()), ['Min', 'Max', 'avg_value']] = 0
 
+#label which net worth were calculated with manual data based on docid
+agg['manual'] = np.where(agg['DocID'] < 10000000, 'manual', 'auto') 
+
 #write agg to excel. First row is col names
 agg.to_excel(f'{output_dir}/net_worth.xlsx', index=False, header=True)
 
@@ -90,9 +93,11 @@ at = pd.read_excel('asset_types.xlsx')
 a_agg = a.merge(at, on='asset_type', how='left')
 a_agg['asset_name'] = a_agg['asset_name'].fillna('Other')
 
-#merge a and l datasets with df_url and write as separate files (for record-keeping)
+#merge a and l datasets with df_url     
 af = pd.merge(df_urls, a_agg, left_on='DocID', right_on='docid', how='left')
 lf = pd.merge(df_urls, l_agg, left_on='DocID', right_on='docid', how='left')
+
+#write as separate files (for record-keeping)
 af.to_excel(f'{output_dir}/assets.xlsx', index=False, header=True)
 lf.to_excel(f'{output_dir}/liabilities.xlsx', index=False, header=True)
 
