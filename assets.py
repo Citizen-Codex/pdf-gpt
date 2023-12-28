@@ -18,7 +18,7 @@ df_pages['docid_page_number'] = df_pages['docid'].astype(str) + '_' + df_pages['
 #create aggreage data set from output/csv_files
 df_comp = utils.read_assets()
 
-#filter out those already completed
+# filter out those already completed (if needed)
 df = df_pages[~df_pages['docid_page_number'].isin(df_comp['docid_page_number'])]
 
 # Convert dataframe to a list of dictionaries for easier processing (could simply store this way in the future)
