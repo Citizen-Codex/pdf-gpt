@@ -45,8 +45,14 @@ a = a.rename(columns={'asset_name': 'name'})
 l = l.rename(columns={'liability_name': 'name'})
 
 #read in manual data
+#need to exlude real estate items (make sure to call lower() on the search string)
 am_og = pd.read_excel('manual_data/assets_2022FD_manual.xlsx')
 lm_og = pd.read_excel('manual_data/liabilities_2022FD_manual.xlsx')
+
+#add col whether RP or not
+#If search_string is in x_name, then set col to True
+search_string = 'mortgage|home|residence|property|rental|real estate|real-estate'
+am_og['asset_type'] = np.where(am_og['name'].str.lower().str.contains(search_string), "RP", None)
 
 #join manual data with df_urls to get docids 
 am = df_urls.merge(am_og, left_on='URL', right_on='url', how='inner')
@@ -90,7 +96,7 @@ agg.to_excel(f'{output_dir}/net_worth.xlsx', index=False, header=True)
 #where a_agg['asset_type'] is "P", label as '5P'
 a_agg['asset_type'] = np.where(a_agg['asset_type'] == 'P', '5P', a_agg['asset_type'])
 at = pd.read_excel('asset_types.xlsx')
-a_agg = a.merge(at, on='asset_type', how='left')
+a_agg = a_agg.merge(at, on='asset_type', how='left')
 a_agg['asset_name'] = a_agg['asset_name'].fillna('Other')
 
 #merge a and l datasets with df_url     

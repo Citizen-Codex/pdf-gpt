@@ -32,4 +32,3 @@ subset_df_pp = subset_df.merge(legis, left_on='StateDst', right_on='statedst', h
 
 #not sure why there are 5 extra documents. May be for house members who died or resigned?
 subset_df_pp.to_excel('pdf_urls/urls_2022FD.xlsx', index=False)
-
